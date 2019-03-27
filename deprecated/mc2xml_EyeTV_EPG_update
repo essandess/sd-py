@@ -1,0 +1,29 @@
+#!/usr/bin/expect
+
+# Dependencies:
+# mc2xml from http://mc2xml.awardspace.info
+# https://schedulesdirect.org/account
+
+# Reference:
+# https://eyetvforum.com/index.php?/topic/2517-tv-guide-not-updating/page/4/
+
+set sd_lineup_code 3
+
+set timeout 2
+
+cd /tmp
+exec rm -f mc2xml.dat xmltv.xml
+spawn ~/bin/mc2xml -J username:password -c us -g 02138
+
+expect -re "^\[mc2xml\] \(0-\d+\): "
+
+send -- "$sd_lineup_code\r"
+
+set timeout 120
+
+expect eof
+
+exec open -a EyeTV xmltv.xml
+
+# delete these /tmp files after EyeTV.app has processed xmltv.xml
+# exec rm -f mc2xml.dat xmltv.xml
