@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>Label</key>
+	<string>com.github.essandess.sd-py</string>
+	<key>ProgramArguments</key>
+	<array>
+		<string>/bin/bash</string>
+		<string>-c</string>
+		<string>SD_USERNAME="username" SD_PASSWORD_SHA1="0000000000000000000000000000000000000000" SD_LINEUP="USA-MA02317-X" PATH=/opt/local/bin:$PATH ; ~/bin/sd_json.py -u $SD_USERNAME -p $SD_PASSWORD_SHA1 -l $SD_LINEUP &gt; xmltv.log 2&gt;&amp;1 ; /usr/bin/open -a EyeTV /tmp/xmltv.xml</string>
+	</array>
+	<key>RunAtLoad</key>
+	<false/>
+	<key>StartCalendarInterval</key>
+	<array>
+		<dict>
+			<key>Weekday</key>
+			<integer>1</integer>
+			<key>Hour</key>
+			<integer>3</integer>
+			<key>Minute</key>
+			<integer>00</integer>
+		</dict>
+	</array>
+	<key>WorkingDirectory</key>
+	<string>/tmp</string>
+</dict>
+</plist>
