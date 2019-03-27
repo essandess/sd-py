@@ -4,10 +4,10 @@ Schedules Direct JSON and XMLTV Python API
 Call [Schedules Direct](https://schedulesdirect.org/) JSON [API](../../../../SchedulesDirect/JSON-Service/wiki/API-20141201) 
 and convert the retrieved schedules and programs to an [XMLTV](../../../../XMLTV/xmltv/blob/master/xmltv.dtd) EPG file.
 
-See the code and the Schedules Direct API [documentation](../../../../SchedulesDirect/JSON-Service/wiki/API-20141201) for a 
+See the [code](./sd_json.py) and the Schedules Direct API [documentation](../../../../SchedulesDirect/JSON-Service/wiki/API-20141201) for a 
 list of API calls.
 
-There is a launchd.plist that creates a new XMLTV EPG file every week, and loads it into [EyeTV](../../../etv-comskip).
+There is a [launchd.plist](./com.github.essandess.sd-py.plist) that creates a new XMLTV EPG file every week, and loads it into [EyeTV](../../../etv-comskip).
 
 ## Usage
 
@@ -16,7 +16,7 @@ Command line:
 ./sd_json.py -u USERNAME -p PASSWORD_SHA1 -l LINEUP
 ```
 
-The creates the file `xmltv.xml`.
+This creates the file `xmltv.xml`.
 
 Python API:
 ```python
