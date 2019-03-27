@@ -7,7 +7,7 @@ and convert the retrieved schedules and programs to an [XMLTV](../../../../XMLTV
 See the [code](./sd_json.py) and the Schedules Direct API [documentation](../../../../SchedulesDirect/JSON-Service/wiki/API-20141201) for a 
 list of API calls.
 
-There is a launchd.plist that creates a new XMLTV EPG file every week, and loads it into [EyeTV](../../../etv-comskip).
+There is a [launchd.plist](./com.github.essandess.sd-py.plist) that creates a new XMLTV EPG file every week, and loads it into [EyeTV](../../../etv-comskip).
 
 ## Usage
 
