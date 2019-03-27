@@ -16,7 +16,7 @@ Command line:
 ./sd_json.py -u USERNAME -p PASSWORD_SHA1 -l LINEUP
 ```
 
-The creates the file `xmltv.xml`.
+This creates the file `xmltv.xml`.
 
 Python API:
 ```python
