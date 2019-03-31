@@ -332,6 +332,9 @@ class SD_JSON:
                     "start": start.astimezone(local_timezone).strftime("%Y%m%d%H%M%S %z"),
                     "stop": stop.astimezone(local_timezone).strftime("%Y%m%d%H%M%S %z"),
                     "channel": stationID_map_dict[sid["stationID"]]["id"] })
+                # Schedules Direct program md5 hash as keyword "sd-md5-<hash>"
+                if "md5" in sid_pgm:
+                    et.SubElement(programme,"keyword").text = f'sd-md5-{sid_pgm["md5"]}'
                 # title
                 if "titles" in pgm:
                     for ttl in pgm["titles"]:
