@@ -294,7 +294,9 @@ class SD_JSON:
         for child1 in [child1 for child1 in doc.getroot().iterchildren() if child1.tag == "programme"]:
             for child2 in [child2 for child2 in child1.iterchildren() if
                     child2.tag == "keyword" and bool(sd_md5_re.match(child2.text))]:
-                xmltv_cache[sd_md5_re.sub("", child2.text)] = copy.deepcopy(child1)
+                sd_md5 = sd_md5_re.sub("", child2.text)
+                if sd_md5 not in xmltv_cache:  # deepcopy the first instance
+                    xmltv_cache[sd_md5] = copy.deepcopy(child1)
         self.xmltv_cache = xmltv_cache
         return xmltv_cache
 
@@ -337,23 +339,28 @@ class SD_JSON:
         pgm_prec = math.ceil(math.log10(max(1,len(self.api_programs_json))))
         for sid in self.api_schedules_json:
             for sid_pgm in sid["programs"]:
-                # grab the program from cache if it exists
-                if sid_pgm["md5"] in self.xmltv_cache:
-                    programme = self.xmltv_cache[sid_pgm["md5"]]
-                    root.append(programme)  # no deepcopy necessary because tree traversal already done
+                if sid_pgm["md5"] not in self.xmltv_cache \
+                        and sid_pgm["programID"] not in programID_dict:
+                    warn.warn("No program data for hash '{}' or program id '{}'.".format(sid_pgm["md5"],sid_pgm["programID"]))
                     continue
-                if sid_pgm["programID"] not in programID_dict: continue
-                pgm = self.api_programs_json[programID_dict[sid_pgm["programID"]]]
                 attrib_lang = {"lang": stationID_stn_dict[sid["stationID"]]["broadcastLanguage"][0]} \
                     if "broadcastLanguage" in stationID_stn_dict[sid["stationID"]] \
                     else None
                 # programme
                 start = dt.datetime.strptime(sid_pgm["airDateTime"],"%Y-%m-%dT%H:%M:%S%z")
                 stop = start + dt.timedelta(seconds=sid_pgm["duration"])
-                programme = et.SubElement(root, "programme", attrib={
-                    "start": start.astimezone(local_timezone).strftime("%Y%m%d%H%M%S %z"),
-                    "stop": stop.astimezone(local_timezone).strftime("%Y%m%d%H%M%S %z"),
-                    "channel": stationID_map_dict[sid["stationID"]]["id"] })
+                programme_attrib = dict(
+                    start=start.astimezone(local_timezone).strftime("%Y%m%d%H%M%S %z"),
+                    stop=stop.astimezone(local_timezone).strftime("%Y%m%d%H%M%S %z"),
+                    channel=stationID_map_dict[sid["stationID"]]["id"] )
+                # grab the program from cache if it exists
+                if sid_pgm["md5"] in self.xmltv_cache:
+                    programme = self.xmltv_cache[sid_pgm["md5"]]
+                    for ky in programme_attrib: programme.set(ky,programme_attrib[ky])
+                    root.append(copy.deepcopy(programme))
+                    continue
+                pgm = self.api_programs_json[programID_dict[sid_pgm["programID"]]]
+                programme = et.SubElement(root, "programme", attrib=programme_attrib)
                 # Schedules Direct program md5 hash as keyword "sd-md5-<hash>"
                 if "md5" in sid_pgm:
                     et.SubElement(programme,"keyword").text = f'{sd_md5_prefix}{sid_pgm["md5"]}'
