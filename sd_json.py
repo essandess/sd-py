@@ -30,8 +30,8 @@ __version__ = '1.0'
 
 __all__ = ['SD_JSON']
 
-import argparse as ap, datetime as dt, hashlib as hl, json, lxml.etree as et, \
-    math, re, requests, string, sys, tzlocal, urllib.parse as uprs, warnings as warn
+import argparse as ap, copy, datetime as dt, hashlib as hl, json, lxml.etree as et, \
+    math, os, re, requests, string, sys, tzlocal, urllib.parse as uprs, warnings as warn
 
 # defaults
 sd_url = "https://json.schedulesdirect.org/20141201"  # no trailing '/'
@@ -59,6 +59,10 @@ def issha1(s):
 
 def json_prettyprint(j,*args,**kwargs):
     print(json.dumps(j,indent=4,sort_keys=True),*args,**kwargs)
+
+# cache programme's using a keyword with this hash name prefix
+sd_md5_prefix = 'sd-md5-'
+sd_md5_re = re.compile(f'^{sd_md5_prefix}')
 
 class SD_JSON:
     """
@@ -264,7 +268,8 @@ class SD_JSON:
         def sd_api_programs():
             return requests.post(f'{sd_url}/programs', data=json.dumps(sd_pgm_query), headers=self.headers)
         resp_sched = self.api_schedules()
-        sd_programs_data = list(set([p["programID"] for s in resp_sched for p in s["programs"]]))
+        xmltv_cache = self.load_xmltv_cache()
+        sd_programs_data = list(set([p["programID"] for s in resp_sched for p in s["programs"] if p["md5"] not in xmltv_cache]))
         if not self.quiet or self.verbose:
             print(f'\tprograms requested: {len(sd_programs_data)}… ',end="",flush=True)
         idx = 0  # block indexing through programID's
@@ -281,6 +286,17 @@ class SD_JSON:
         self.api_programs_data = sd_programs_data
         self.api_programs_json = resp_json
         return resp_json
+
+    def load_xmltv_cache(self):
+        xmltv_cache = dict()
+        if not os.path.isfile(self.xmltv_file): return xmltv_cache
+        doc = et.parse(os.path.expanduser(self.xmltv_file))
+        for child1 in [child1 for child1 in doc.getroot().iterchildren() if child1.tag == "programme"]:
+            for child2 in [child2 for child2 in child1.iterchildren() if
+                    child2.tag == "keyword" and bool(sd_md5_re.match(child2.text))]:
+                xmltv_cache[sd_md5_re.sub("", child2.text)] = copy.deepcopy(child1)
+        self.xmltv_cache = xmltv_cache
+        return xmltv_cache
 
     def api_xmltv(self):
         """
@@ -311,15 +327,21 @@ class SD_JSON:
                     attrib={"src": stn["logo"]["URL"], "width": str(stn["logo"]["width"]), "height": str(stn["logo"]["height"])})
 
         # programs
+        if not hasattr(self,"xmltv_cache"): self.load_xmltv_cache()
         stationID_stn_dict = { stn["stationID"]: stn
             for k, stn in enumerate(self.api_channel_mapping_json["stations"]) }
         programID_dict = { pid["programID"]: k
             for k, pid in enumerate(self.api_programs_json) }
         local_timezone = tzlocal.get_localzone()
         pgmid_counts = {k: 0 for k in programID_dict}
-        pgm_prec = math.ceil(math.log10(len(self.api_programs_json)))
+        pgm_prec = math.ceil(math.log10(max(1,len(self.api_programs_json))))
         for sid in self.api_schedules_json:
             for sid_pgm in sid["programs"]:
+                # grab the program from cache if it exists
+                if sid_pgm["md5"] in self.xmltv_cache:
+                    programme = self.xmltv_cache[sid_pgm["md5"]]
+                    root.append(programme)  # no deepcopy necessary because tree traversal already done
+                    continue
                 if sid_pgm["programID"] not in programID_dict: continue
                 pgm = self.api_programs_json[programID_dict[sid_pgm["programID"]]]
                 attrib_lang = {"lang": stationID_stn_dict[sid["stationID"]]["broadcastLanguage"][0]} \
@@ -334,7 +356,7 @@ class SD_JSON:
                     "channel": stationID_map_dict[sid["stationID"]]["id"] })
                 # Schedules Direct program md5 hash as keyword "sd-md5-<hash>"
                 if "md5" in sid_pgm:
-                    et.SubElement(programme,"keyword").text = f'sd-md5-{sid_pgm["md5"]}'
+                    et.SubElement(programme,"keyword").text = f'{sd_md5_prefix}{sid_pgm["md5"]}'
                 # title
                 if "titles" in pgm:
                     for ttl in pgm["titles"]:
