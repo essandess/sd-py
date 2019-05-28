@@ -8,7 +8,7 @@
 	<array>
 		<string>/bin/bash</string>
 		<string>-c</string>
-		<string>SD_USERNAME="username" SD_PASSWORD_SHA1="0000000000000000000000000000000000000000" SD_LINEUP="USA-MA02317-X" PATH=/opt/local/bin:$PATH ; ~/bin/sd_json.py -u $SD_USERNAME -p $SD_PASSWORD_SHA1 -l $SD_LINEUP &gt; xmltv.log 2&gt;&amp;1 ; /usr/bin/open -a EyeTV /tmp/xmltv.xml</string>
+		<string>SD_USERNAME="username" SD_PASSWORD_SHA1="0000000000000000000000000000000000000000" SD_LINEUP="USA-MA02317-X" PATH=/opt/local/bin:$PATH ; /bin/mkdir -p "$HOME/Library/Application Support/sd-py" ; /usr/bin/cd "$HOME/Library/Application Support/sd-py" ; "$HOME/bin/sd_json.py" -u $SD_USERNAME -p $SD_PASSWORD_SHA1 -l $SD_LINEUP 1&gt; xmltv.log 2&gt;&amp;1 ; /usr/bin/open -a EyeTV "$HOME/Library/Application Support/sd-py/xmltv.xml"</string>
 	</array>
 	<key>RunAtLoad</key>
 	<false/>
@@ -23,7 +23,5 @@
 			<integer>00</integer>
 		</dict>
 	</array>
-	<key>WorkingDirectory</key>
-	<string>/tmp</string>
 </dict>
 </plist>

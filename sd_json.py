@@ -269,7 +269,8 @@ class SD_JSON:
             return requests.post(f'{sd_url}/programs', data=json.dumps(sd_pgm_query), headers=self.headers)
         resp_sched = self.api_schedules()
         xmltv_cache = self.load_xmltv_cache()
-        sd_programs_data = list(set([p["programID"] for s in resp_sched for p in s["programs"] if p["md5"] not in xmltv_cache]))
+        sd_programs_data = list(set([p["programID"] for s in resp_sched if "programs" in s for p in s["programs"] if p["md5"] not in xmltv_cache]))
+
         if not self.quiet or self.verbose:
             print(f'\tprograms requested: {len(sd_programs_data)}… ',end="",flush=True)
         idx = 0  # block indexing through programID's
@@ -289,6 +290,7 @@ class SD_JSON:
 
     def load_xmltv_cache(self):
         xmltv_cache = dict()
+        self.xmltv_cache = xmltv_cache
         if not os.path.isfile(self.xmltv_file): return xmltv_cache
         doc = et.parse(os.path.expanduser(self.xmltv_file))
         for child1 in [child1 for child1 in doc.getroot().iterchildren() if child1.tag == "programme"]:
@@ -337,7 +339,7 @@ class SD_JSON:
         local_timezone = tzlocal.get_localzone()
         pgmid_counts = {k: 0 for k in programID_dict}
         pgm_prec = math.ceil(math.log10(max(1,len(self.api_programs_json))))
-        for sid in self.api_schedules_json:
+        for sid in (sidp for sidp in self.api_schedules_json if "programs" in sidp):
             for sid_pgm in sid["programs"]:
                 if sid_pgm["md5"] not in self.xmltv_cache \
                         and sid_pgm["programID"] not in programID_dict:
