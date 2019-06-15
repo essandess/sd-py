@@ -44,6 +44,7 @@ headers = {"Content-type": "application/json", "Accept": "text/plain,deflate,gzi
 api_call = "xmltv"
 verboseMap = True
 timedelta_days = 15
+xmltv_file_path = "~/Library/Application Support/sd-py"
 xmltv_file = "xmltv.xml"
 quiet = True
 verbose = True
@@ -83,6 +84,7 @@ class SD_JSON:
                  verboseMap=verboseMap,
                  timedelta_days=timedelta_days,
                  parseArgs_flag=False,
+                 xmltv_file_path=xmltv_file_path,
                  xmltv_file=xmltv_file,
                  quiet=quiet,
                  verbose=verbose,
@@ -98,6 +100,7 @@ class SD_JSON:
         self.verboseMap = verboseMap
         self.timedelta_days = timedelta_days
         self.parseArgs_flag = parseArgs_flag
+        self.xmltv_file_path = xmltv_file_path
         self.xmltv_file = xmltv_file
         self.quiet = quiet
         self.verbose = verbose
@@ -291,8 +294,12 @@ class SD_JSON:
     def load_xmltv_cache(self):
         xmltv_cache = dict()
         self.xmltv_cache = xmltv_cache
-        if not os.path.isfile(self.xmltv_file): return xmltv_cache
-        doc = et.parse(os.path.expanduser(self.xmltv_file))
+        self.xmltv_file_fullpath = os.path.expanduser(os.path.join(self.xmltv_file_path,self.xmltv_file))
+        if not os.path.isfile(self.xmltv_file_fullpath): return xmltv_cache
+        try:
+            doc = et.parse(self.xmltv_file_fullpath)
+        except et.XMLSyntaxError:
+            return xmltv_cache
         for child1 in [child1 for child1 in doc.getroot().iterchildren() if child1.tag == "programme"]:
             for child2 in [child2 for child2 in child1.iterchildren() if
                     child2.tag == "keyword" and bool(sd_md5_re.match(child2.text))]:
@@ -473,8 +480,10 @@ class SD_JSON:
                         star_rating = et.SubElement(programme, "star-rating")
                         et.SubElement(star_rating, "value").text = f'{qrt["rating"]}/{qrt["maxRating"]}'
 
-        # write the XML file
-        with et.xmlfile(self.xmltv_file, encoding="ISO-8859-1") as xf:
+        # (re-)write the XML file
+        if not hasattr(self,'xmltv_file_fullpath'):
+            self.xmltv_file_fullpath = os.path.expanduser(os.path.join(self.xmltv_file_path,self.xmltv_file))
+        with et.xmlfile(self.xmltv_file_fullpath, encoding="ISO-8859-1") as xf:
             xf.write_declaration()
             xf.write_doctype('<!DOCTYPE tv SYSTEM "xmltv.dtd">')
             xf.write(root, pretty_print=True)
